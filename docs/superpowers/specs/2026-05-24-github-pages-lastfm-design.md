@@ -37,7 +37,7 @@ The Last.fm API key lives in `config.js` as a plain exported constant. Safe to c
 
 ## Section 2: Last.fm Integration
 
-All Last.fm API calls are isolated in `lastfm.js`. `VinylVault.jsx` imports only the four public functions below.
+All Last.fm API calls are isolated in `lastfm.js`. `VinylVault.jsx` imports only the three public functions below.
 
 ### `searchByTag(tag, limit)`
 - Endpoint: `tag.getTopTracks`
@@ -54,12 +54,6 @@ All Last.fm API calls are isolated in `lastfm.js`. `VinylVault.jsx` imports only
 - Endpoint: `artist.getSimilar` on the track's artist → `artist.getTopTracks` per similar artist
 - Excludes the source track itself
 - Caps source artist at 1 track (same rule as current app)
-
-### `getTrackTags(artist, title)`
-- Endpoint: `track.getTopTags`
-- Called in parallel (via `Promise.all`) for all result tracks after primary search resolves
-- Returns top 3 tag names as an array (e.g. `['soul', '70s', 'classic']`)
-- Replaces the AI-generated note field; rendered as `soul · 70s · classic`
 
 ### Artist vs. Tag Detection
 - Run `artist.search(query)` first
@@ -86,7 +80,7 @@ All Last.fm API calls are isolated in `lastfm.js`. `VinylVault.jsx` imports only
 The full visual design is preserved. No layout, color, font, animation, or structural changes. The UI will be handed off to a designer in a future pass.
 
 **Changes:**
-- Note field displays top 3 Last.fm tags joined by ` · ` (same `rowNote` style)
+- Note field displays listener count formatted as `142k listeners` (same `rowNote` style) — reinforces the obscurity angle with no extra API calls
 - Error message updated to reference a network/API failure (removes jukebox-coin metaphor tied to AI)
 - `fetch` to `api.anthropic.com` and all prompt-building logic removed from `VinylVault.jsx`
 
