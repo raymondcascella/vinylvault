@@ -184,9 +184,9 @@ export default function VinylVault() {
         <div style={S.archChrome} aria-hidden />
         {/* Interior warm glow */}
         <div style={S.archGlow} aria-hidden />
-        {/* Horizontal chrome strip across the top */}
-        <div style={S.chromeBand} aria-hidden />
-        {/* Bubble tubes */}
+        {/* Rainbow arch bloom */}
+        <div style={S.archRainbow} aria-hidden />
+        {/* Bubble tubes / rainbow pilasters */}
         <BubbleTube mirror={false} />
         <BubbleTube mirror={true} />
 
@@ -436,13 +436,13 @@ body { margin: 0; }
   animation: neon-flicker 7s ease-in-out infinite;
 }
 
-/* ── Bubble tubes ── */
+/* ── Bubble tubes / rainbow pilasters ── */
 .vv-tube {
   position: absolute;
-  top: 62px;
-  bottom: 22px;
-  width: 14px;
-  border-radius: 10px;
+  top: 0;
+  bottom: 0;
+  width: 28px;
+  border-radius: 6px;
   overflow: hidden;
 }
 @keyframes bubble-rise {
@@ -540,7 +540,7 @@ body { margin: 0; }
   .vv-cabinet { padding-left: 36px !important; padding-right: 36px !important; border-radius: 110px 110px 22px 22px !important; }
   .vv-title   { font-size: 12vw !important; }
   .vv-btn     { font-size: 15px !important; padding: 14px 14px !important; }
-  .vv-tube    { width: 9px !important; }
+  .vv-tube    { width: 16px !important; }
 }
 .vv-btn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 `;
@@ -617,30 +617,53 @@ const S = {
     pointerEvents: "none",
     zIndex: 0,
   },
-  chromeBand: {
-    // Horizontal chrome strip below the arch peak
+  archRainbow: {
+    // Soft rainbow bloom radiating from the top of the arch dome
     position: "absolute",
-    top: 54,
-    left: 0,
-    right: 0,
-    height: 8,
-    background: "linear-gradient(180deg, #f0e0a8 0%, #c8a850 30%, #a07828 60%, #c8a850 80%, #e0c880 100%)",
-    boxShadow: "0 2px 4px rgba(0,0,0,0.35), 0 -1px 2px rgba(255,240,180,0.4)",
+    top: -20,
+    left: "50%",
+    transform: "translateX(-50%)",
+    width: "100%",
+    height: 120,
+    background: "radial-gradient(ellipse 80% 100% at 50% 0%, rgba(255,40,40,0.22) 0%, rgba(255,160,0,0.18) 20%, rgba(240,220,0,0.15) 37%, rgba(20,200,80,0.14) 54%, rgba(30,120,255,0.16) 70%, rgba(160,20,200,0.14) 85%, transparent 100%)",
     pointerEvents: "none",
-    zIndex: 1,
+    zIndex: 0,
   },
 
-  // Bubble tubes
+  // Rainbow pilaster tubes (classic Wurlitzer segmented color columns)
   tubeLeft: {
-    left: 14,
-    background: "linear-gradient(180deg, #ffcc20 0%, #ff8800 50%, #cc2200 100%)",
-    boxShadow: "0 0 14px rgba(255,180,20,0.85), 0 0 30px rgba(255,100,0,0.4), inset 3px 0 5px rgba(255,255,255,0.28)",
+    left: 8,
+    background: `repeating-linear-gradient(180deg,
+      #ff1020 0px,  #ff1020 18px,
+      #ff8000 18px, #ff8000 36px,
+      #f0d000 36px, #f0d000 54px,
+      #10c840 54px, #10c840 72px,
+      #0878ff 72px, #0878ff 90px,
+      #9010c0 90px, #9010c0 108px
+    )`,
+    boxShadow: [
+      "0 0 20px rgba(160,80,255,0.65)",
+      "0 0 40px rgba(80,160,255,0.25)",
+      "inset 3px 0 6px rgba(255,255,255,0.28)",
+      "inset -1px 0 3px rgba(0,0,0,0.2)",
+    ].join(","),
   },
   tubeRight: {
-    right: 14,
-    background: "linear-gradient(180deg, #ffcc20 0%, #ff8800 50%, #cc2200 100%)",
-    boxShadow: "0 0 14px rgba(255,180,20,0.85), 0 0 30px rgba(255,100,0,0.4), inset -3px 0 5px rgba(255,255,255,0.28)",
-    animationDelay: "1.3s",
+    right: 8,
+    background: `repeating-linear-gradient(180deg,
+      #9010c0 0px,  #9010c0 18px,
+      #0878ff 18px, #0878ff 36px,
+      #10c840 36px, #10c840 54px,
+      #f0d000 54px, #f0d000 72px,
+      #ff8000 72px, #ff8000 90px,
+      #ff1020 90px, #ff1020 108px
+    )`,
+    boxShadow: [
+      "0 0 20px rgba(255,100,30,0.65)",
+      "0 0 40px rgba(255,200,50,0.25)",
+      "inset -3px 0 6px rgba(255,255,255,0.28)",
+      "inset 1px 0 3px rgba(0,0,0,0.2)",
+    ].join(","),
   },
   tubeGlass: {
     position: "absolute",
