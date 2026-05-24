@@ -625,44 +625,30 @@ const S = {
     transform: "translateX(-50%)",
     width: "100%",
     height: 120,
-    background: "radial-gradient(ellipse 80% 100% at 50% 0%, rgba(255,40,40,0.22) 0%, rgba(255,160,0,0.18) 20%, rgba(240,220,0,0.15) 37%, rgba(20,200,80,0.14) 54%, rgba(30,120,255,0.16) 70%, rgba(160,20,200,0.14) 85%, transparent 100%)",
+    background: "radial-gradient(ellipse 90% 100% at 50% 0%, rgba(255,40,40,0.30) 0%, rgba(255,150,0,0.24) 18%, rgba(240,220,0,0.20) 34%, rgba(20,200,80,0.18) 50%, rgba(30,120,255,0.22) 67%, rgba(160,20,200,0.20) 83%, transparent 100%)",
     pointerEvents: "none",
     zIndex: 0,
   },
 
-  // Rainbow pilaster tubes (classic Wurlitzer segmented color columns)
+  // Rainbow pilaster tubes — smooth hue-wheel gradients
   tubeLeft: {
     left: 8,
-    background: `repeating-linear-gradient(180deg,
-      #ff1020 0px,  #ff1020 18px,
-      #ff8000 18px, #ff8000 36px,
-      #f0d000 36px, #f0d000 54px,
-      #10c840 54px, #10c840 72px,
-      #0878ff 72px, #0878ff 90px,
-      #9010c0 90px, #9010c0 108px
-    )`,
+    background: "linear-gradient(180deg, #ff2020 0%, #ff8800 20%, #f5d000 38%, #18d060 55%, #1880ff 73%, #a020e0 100%)",
     boxShadow: [
-      "0 0 20px rgba(160,80,255,0.65)",
-      "0 0 40px rgba(80,160,255,0.25)",
-      "inset 3px 0 6px rgba(255,255,255,0.28)",
-      "inset -1px 0 3px rgba(0,0,0,0.2)",
+      "0 0 22px rgba(160,80,255,0.6)",
+      "0 0 44px rgba(80,160,255,0.2)",
+      "inset 3px 0 6px rgba(255,255,255,0.3)",
+      "inset -1px 0 3px rgba(0,0,0,0.18)",
     ].join(","),
   },
   tubeRight: {
     right: 8,
-    background: `repeating-linear-gradient(180deg,
-      #9010c0 0px,  #9010c0 18px,
-      #0878ff 18px, #0878ff 36px,
-      #10c840 36px, #10c840 54px,
-      #f0d000 54px, #f0d000 72px,
-      #ff8000 72px, #ff8000 90px,
-      #ff1020 90px, #ff1020 108px
-    )`,
+    background: "linear-gradient(180deg, #a020e0 0%, #1880ff 27%, #18d060 45%, #f5d000 62%, #ff8800 80%, #ff2020 100%)",
     boxShadow: [
-      "0 0 20px rgba(255,100,30,0.65)",
-      "0 0 40px rgba(255,200,50,0.25)",
-      "inset -3px 0 6px rgba(255,255,255,0.28)",
-      "inset 1px 0 3px rgba(0,0,0,0.2)",
+      "0 0 22px rgba(255,100,30,0.6)",
+      "0 0 44px rgba(255,200,50,0.2)",
+      "inset -3px 0 6px rgba(255,255,255,0.3)",
+      "inset 1px 0 3px rgba(0,0,0,0.18)",
     ].join(","),
   },
   tubeGlass: {
