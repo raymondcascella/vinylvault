@@ -1,11 +1,6 @@
 import React, { useState, useRef } from "react";
 import { searchByTag, searchByArtist, branchFromTrack, detectQueryType } from "./lastfm";
 
-// ── Vinyl Vault ───────────────────────────────────────────────
-// A Wurlitzer-jukebox song picker. Name an artist, genre, or mood;
-// it pulls records leaning toward deeper cuts. Tune with the dial,
-// load up your stack, play the whole set.
-
 const DEPTH_LABELS = [
   { v: 0, label: "Top of the Charts", blurb: "The songs everyone knows" },
   { v: 1, label: "Fan Favorites", blurb: "Popular, plus a few sleepers" },
@@ -14,8 +9,6 @@ const DEPTH_LABELS = [
   { v: 4, label: "Buried in the Stacks", blurb: "Obscurities only diehards know" },
 ];
 
-// Surprise seeds, split into two curated lists. Surprise Me pulls from both.
-// Each is only a STARTING POINT — the depth dial + coin flip dig outward from it.
 const GENRE_SEEDS = [
   "Northern soul", "dub reggae", "krautrock", "bossa nova", "Tropicália",
   "post-punk", "desert blues", "doo-wop", "shoegaze", "spiritual jazz",
@@ -102,7 +95,6 @@ export default function VinylVault() {
         }
       }
 
-      // Sort by depth: depth 0-2 = least obscure first, depth 3-4 = most obscure first
       const sorted = [...tracks].sort((a, b) =>
         depth <= 2 ? a.obscurity - b.obscurity : b.obscurity - a.obscurity
       );
@@ -141,7 +133,7 @@ export default function VinylVault() {
   const allQueued = results.length > 0 && results.every(inStack);
 
   function copyStack() {
-    const text = playlist.map((s) => `${s.artist} — ${s.title} (${s.year})`).join("\n");
+    const text = playlist.map((s) => `${s.artist} — ${s.title}${s.year ? ` (${s.year})` : ""}`).join("\n");
     navigator.clipboard?.writeText(text);
   }
 
@@ -149,26 +141,33 @@ export default function VinylVault() {
     <div style={S.root}>
       <style>{CSS}</style>
 
-      {/* ── Jukebox crown ── */}
-      <div style={S.cabinet} className="vv-cabinet">
-        <div style={S.archGlow} aria-hidden />
-        <div style={S.bubblerLeft} className="bubbler vv-bubbler-l" aria-hidden />
-        <div style={S.bubblerRight} className="bubbler vv-bubbler-r" aria-hidden />
-
+      {/* ── Header ── */}
+      <div style={S.cabinet}>
+        <div style={S.bgDisc} aria-hidden>
+          <div style={S.bgDiscLabel} />
+          <div style={S.bgDiscHole} />
+        </div>
         <header style={S.header}>
-          <div style={S.coinSlot}>◉ DROP A COIN · MAKE YOUR SELECTION</div>
-          <h1 style={S.title} className="vv-title">Vinyl Vault</h1>
+          <div style={S.coinSlot}>◉ DIG DEEP · PLAY RARE</div>
+          <h1 style={S.title} className="vv-title">
+            Vinyl<br />Vault
+          </h1>
           <p style={S.subtitle}>
-            Name an artist, a genre, a mood. The Vault skips the jukebox staples
-            and reaches for the rare pressings locked away in the back.
+            Name an artist, a genre, a mood. The Vault skips the jukebox
+            staples and reaches for the rare pressings locked in the back.
           </p>
         </header>
       </div>
 
       {/* ── Controls ── */}
       <section style={S.controls}>
+        <div style={S.sectionRule}>
+          <span style={S.sectionRuleLabel}>SELECTIONS</span>
+        </div>
+
         <div style={S.searchRow}>
           <input
+            className="vv-input"
             style={S.input}
             placeholder="Sam Cooke · Northern soul · slow dance · desert blues…"
             value={query}
@@ -177,10 +176,10 @@ export default function VinylVault() {
           />
         </div>
         <div style={S.buttonRow}>
-          <button style={S.digBtn} className="vv-btn" onClick={() => dig()} disabled={loading}>
+          <button style={S.digBtn} className="vv-btn vv-dig-btn" onClick={() => dig()} disabled={loading}>
             {loading ? "Cueing…" : "Make Selection"}
           </button>
-          <button style={S.surpriseBtn} className="vv-btn" onClick={surprise} disabled={loading} title="Drop a random idea into the box">
+          <button style={S.surpriseBtn} className="vv-btn vv-surprise-btn" onClick={surprise} disabled={loading} title="Drop a random idea into the box">
             ⚄ Surprise Me
           </button>
         </div>
@@ -201,7 +200,7 @@ export default function VinylVault() {
           />
           <div style={S.dialTicks}>
             {DEPTH_LABELS.map((d) => (
-              <span key={d.v} style={{ ...S.tick, color: d.v === depth ? "var(--red)" : "var(--ink-soft)" }}>
+              <span key={d.v} style={{ ...S.tick, color: d.v === depth ? "var(--gold)" : "var(--parchment-dim)" }}>
                 {d.v <= depth ? "●" : "○"}
               </span>
             ))}
@@ -212,11 +211,11 @@ export default function VinylVault() {
           <span style={S.fillLabel}>Fill up to</span>
           <div style={S.fillChips}>
             {[
-              { m: 30, t: "30 min" },
-              { m: 60, t: "1 hr" },
-              { m: 90, t: "90 min" },
-              { m: 120, t: "2 hr" },
-              { m: 180, t: "3 hr" },
+              { m: 30, t: "30m" },
+              { m: 60, t: "1h" },
+              { m: 90, t: "90m" },
+              { m: 120, t: "2h" },
+              { m: 180, t: "3h" },
             ].map((p) => (
               <button
                 key={p.m}
@@ -243,7 +242,7 @@ export default function VinylVault() {
 
       {error && <div style={S.error}>{error}</div>}
 
-      {/* ── Results ── */}
+      {/* ── Results + Stack ── */}
       <main style={S.body} className="sel-body">
         <section style={S.resultsCol} ref={listRef}>
           {results.length === 0 && !loading && (
@@ -256,57 +255,71 @@ export default function VinylVault() {
           {loading && (
             <div style={S.empty}>
               <div style={S.emptyDisc} className="spin-fast" />
-              <p style={{ marginTop: 18 }}>Pulling 45s for “{lastQuery || query}”…</p>
+              <p style={{ marginTop: 18 }}>Pulling selections for "{lastQuery || query}"…</p>
             </div>
           )}
 
           {!loading &&
             results.map((song, i) => {
               const playing = nowPlaying === song._id;
+              const accentColor =
+                song.obscurity > 66 ? "var(--ember)" :
+                song.obscurity > 33 ? "var(--gold)" :
+                "var(--gold-dim)";
               return (
-              <article
-                key={song._id}
-                className="record-row"
-                style={{ ...S.row, ...(playing ? S.rowPlaying : {}), animationDelay: `${i * 55}ms` }}
-                onClick={() => setNowPlaying(playing ? null : song._id)}
-              >
-                <div style={S.discWrap}>
-                  <div style={S.disc} className={playing ? "disc spin-45" : "disc"}>
-                    <div style={S.discHole} />
+                <article
+                  key={song._id}
+                  className="record-row"
+                  style={{
+                    ...S.row,
+                    ...(playing ? S.rowPlaying : {}),
+                    borderLeft: `3px solid ${accentColor}`,
+                    animationDelay: `${i * 50}ms`,
+                  }}
+                  onClick={() => setNowPlaying(playing ? null : song._id)}
+                >
+                  <div style={S.discWrap}>
+                    <div style={S.disc} className={playing ? "disc spin-45" : "disc"}>
+                      <div style={S.discHole} />
+                    </div>
+                    {playing && <span style={S.eqBadge}>♪</span>}
                   </div>
-                  {playing && <span style={S.eqBadge}>♪</span>}
-                </div>
-                <ObscurityMeter value={song.obscurity} />
-                <div style={S.rowMain}>
-                  <div style={S.rowTitle}>{song.title}</div>
-                  <div style={S.rowMeta}>{song.artist}{song.year ? ` · ${song.year}` : ""}{song.duration ? ` · ${fmtTrack(song.duration)}` : ""}</div>
-                  <div style={S.rowNote}>{song.note}</div>
-                </div>
-                <div style={S.rowActions}>
-                  <button
-                    style={{ ...S.addBtn, ...(inStack(song) ? S.addBtnDone : {}) }}
-                    onClick={(e) => { e.stopPropagation(); addToStack(song); }}
-                    disabled={inStack(song)}
-                    title={inStack(song) ? "In your stack" : "Add to stack"}
-                  >
-                    {inStack(song) ? "✓" : "+"}
-                  </button>
-                  <button
-                    style={S.branchBtn}
-                    onClick={(e) => { e.stopPropagation(); dig(query, song); }}
-                    disabled={loading}
-                    title={`Find more like "${song.title}"`}
-                  >
-                    ⌕ more like this
-                  </button>
-                </div>
-              </article>
+                  <ObscurityMeter value={song.obscurity} />
+                  <div style={S.rowMain}>
+                    <div style={S.rowTitle}>{song.title}</div>
+                    <div style={S.rowMeta}>{song.artist}{song.year ? ` · ${song.year}` : ""}{song.duration ? ` · ${fmtTrack(song.duration)}` : ""}</div>
+                    <div style={S.rowNote}>{song.note}</div>
+                  </div>
+                  <div style={S.rowActions}>
+                    <button
+                      style={{ ...S.addBtn, ...(inStack(song) ? S.addBtnDone : {}) }}
+                      onClick={(e) => { e.stopPropagation(); addToStack(song); }}
+                      disabled={inStack(song)}
+                      title={inStack(song) ? "In your stack" : "Add to stack"}
+                    >
+                      {inStack(song) ? "✓" : "+"}
+                    </button>
+                    <button
+                      style={S.branchBtn}
+                      className="vv-branch-btn"
+                      onClick={(e) => { e.stopPropagation(); dig(query, song); }}
+                      disabled={loading}
+                      title={`Find more like "${song.title}"`}
+                    >
+                      more like this
+                    </button>
+                  </div>
+                </article>
               );
             })}
 
           {!loading && results.length > 0 && (
-            <button style={{ ...S.addAllBtn, ...(allQueued ? S.addAllDone : {}) }} onClick={addAll} disabled={allQueued}>
-              {allQueued ? "✓ All loaded into the stack" : `▾ Load all ${results.length} into the stack`}
+            <button
+              style={{ ...S.addAllBtn, ...(allQueued ? S.addAllDone : {}) }}
+              onClick={addAll}
+              disabled={allQueued}
+            >
+              {allQueued ? "✓ All loaded into the stack" : `Load all ${results.length} into the stack`}
             </button>
           )}
         </section>
@@ -321,14 +334,23 @@ export default function VinylVault() {
           <div style={S.fillMeter}>
             <div style={S.fillMeterTop}>
               <span>{fmtClock(stackSeconds)} of {fmtClock(targetSeconds)}</span>
-              <span style={{ color: remaining > 0 ? "var(--ink-soft)" : "var(--red)" }}>
-                {remaining > 0 ? `${fmtClock(remaining)} to go` : remaining < -30 ? `${fmtClock(-remaining)} over` : "full ✓"}
+              <span style={{ color: remaining > 0 ? "var(--parchment-muted)" : "var(--gold)" }}>
+                {remaining > 0
+                  ? `${fmtClock(remaining)} to go`
+                  : remaining < -30
+                  ? `${fmtClock(-remaining)} over`
+                  : "full ✓"}
               </span>
             </div>
             <div style={S.fillTrack}>
-              <div style={{ ...S.fillBar, width: `${fillPct}%`, background: fillPct >= 100 ? "var(--red)" : "linear-gradient(90deg, #e7c067, #c0392b)" }} />
+              <div style={{
+                ...S.fillBar,
+                width: `${fillPct}%`,
+                background: fillPct >= 100 ? "var(--ember)" : "var(--gold)",
+              }} />
             </div>
           </div>
+
           {playlist.length === 0 ? (
             <p style={S.stackEmpty}>Records you load queue up here. Build a set, then play it through.</p>
           ) : (
@@ -357,432 +379,696 @@ export default function VinylVault() {
 function ObscurityMeter({ value }) {
   const bars = 5;
   const filled = Math.round((value / 100) * bars);
+  const barColor =
+    value > 66 ? "var(--ember)" :
+    value > 33 ? "var(--gold)" :
+    "rgba(212,148,30,0.45)";
+  const labelColor =
+    value > 66 ? "var(--ember)" :
+    value > 33 ? "var(--gold)" :
+    "var(--parchment-muted)";
   return (
     <div style={S.meter} title={`Obscurity ${value}/100`}>
       <div style={S.meterBars}>
         {Array.from({ length: bars }).map((_, i) => (
-          <span key={i} style={{ ...S.meterBar, background: i < filled ? "var(--red)" : "rgba(60,30,15,0.18)", height: 5 + i * 4 }} />
+          <span
+            key={i}
+            style={{
+              ...S.meterBar,
+              background: i < filled ? barColor : "rgba(255,255,255,0.06)",
+              height: 5 + i * 4,
+            }}
+          />
         ))}
       </div>
-      <span style={S.meterLabel}>{value > 66 ? "rare" : value > 33 ? "cut" : "known"}</span>
+      <span style={{ ...S.meterLabel, color: labelColor }}>
+        {value > 66 ? "rare" : value > 33 ? "cut" : "known"}
+      </span>
     </div>
   );
 }
 
+// ─────────────────────────────────────────────────────────
+// CSS
+// ─────────────────────────────────────────────────────────
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Monoton&family=Fraunces:opsz,wght@9..144,400..800&family=DM+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,400;1,600;1,700&family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
-* { box-sizing: border-box; }
+*, *::before, *::after { box-sizing: border-box; }
+
+body { margin: 0; background: #0e0c09; }
 
 .depth-dial {
   -webkit-appearance: none; appearance: none;
-  width: 100%; height: 6px; border-radius: 6px;
-  background: linear-gradient(90deg, #d9b86a, #c0392b);
+  width: 100%; height: 2px; border-radius: 2px;
+  background: linear-gradient(90deg, #2e2818 0%, #d4941e 100%);
   outline: none; cursor: pointer;
 }
 .depth-dial::-webkit-slider-thumb {
   -webkit-appearance: none; appearance: none;
-  width: 30px; height: 30px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #fff7e6, #d9b86a 60%, #a8842f);
-  border: 3px solid #6e2a1a;
-  box-shadow: 0 3px 10px rgba(110,42,26,0.5); cursor: grab;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #f0c840, #d4941e 55%, #7a5010);
+  border: 2px solid #0e0c09;
+  box-shadow: 0 0 0 2px rgba(212,148,30,0.4), 0 2px 8px rgba(0,0,0,0.6);
+  cursor: grab;
+  transition: box-shadow 0.2s;
+}
+.depth-dial::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 5px rgba(212,148,30,0.2), 0 2px 8px rgba(0,0,0,0.6);
 }
 .depth-dial::-moz-range-thumb {
-  width: 30px; height: 30px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #fff7e6, #d9b86a 60%, #a8842f);
-  border: 3px solid #6e2a1a; cursor: grab;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #f0c840, #d4941e 55%, #7a5010);
+  border: 2px solid #0e0c09; cursor: grab;
 }
-.record-row { animation: slideIn 0.45s cubic-bezier(0.2,0.8,0.2,1) backwards; }
-@keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-.record-row:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(110,42,26,0.18); }
-.spin-slow { animation: spin 8s linear infinite; }
-.spin-fast { animation: spin 1.1s linear infinite; }
-.spin-45 { animation: spin 1.6s linear infinite; }
+
+.record-row {
+  animation: rowIn 0.5s cubic-bezier(0.16,1,0.3,1) backwards;
+}
+@keyframes rowIn {
+  from { opacity: 0; transform: translateX(-14px); }
+  to   { opacity: 1; transform: none; }
+}
+.record-row:hover {
+  transform: translateX(3px);
+  border-right-color: rgba(212,148,30,0.1) !important;
+}
+
+.spin-slow { animation: spin 10s linear infinite; }
+.spin-fast { animation: spin 1s linear infinite; }
+.spin-45   { animation: spin 1.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
 .disc { transition: box-shadow 0.2s; }
-.record-row:hover .disc { box-shadow: 0 0 0 2px var(--amber); }
-.bubbler { animation: bubble 3.5s ease-in-out infinite; }
-@keyframes bubble { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
-::-webkit-scrollbar { width: 10px; }
-::-webkit-scrollbar-thumb { background: rgba(110,42,26,0.3); border-radius: 10px; }
+.record-row:hover .disc {
+  box-shadow: 0 0 0 1px rgba(212,148,30,0.5), 0 0 18px rgba(212,148,30,0.1) !important;
+}
+
+.vv-input:focus {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 0 3px rgba(212,148,30,0.12);
+  outline: none;
+}
+.vv-dig-btn:not(:disabled):hover {
+  background: var(--gold-bright) !important;
+}
+.vv-surprise-btn:not(:disabled):hover {
+  border-color: var(--gold) !important;
+  background: rgba(212,148,30,0.07) !important;
+}
+.vv-branch-btn:not(:disabled):hover {
+  border-color: rgba(212,148,30,0.4) !important;
+  color: var(--gold) !important;
+}
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(212,148,30,0.18); border-radius: 5px; }
+
 @media (max-width: 760px) {
-  .sel-body { grid-template-columns: 1fr !important; }
+  .sel-body  { grid-template-columns: 1fr !important; }
   .sel-stack { position: static !important; }
 }
-@media (max-width: 480px) {
-  .vv-cabinet { padding-left: 30px !important; padding-right: 30px !important; border-radius: 90px 90px 20px 20px !important; }
-  .vv-title { font-size: 13vw !important; }
-  .vv-bubbler-l { left: 8px !important; width: 8px !important; }
-  .vv-bubbler-r { right: 8px !important; width: 8px !important; }
-  .vv-btn { padding-left: 12px !important; padding-right: 12px !important; font-size: 15px !important; }
+@media (max-width: 580px) {
+  .vv-title { font-size: 18vw !important; }
+  .vv-btn   { font-size: 14px !important; padding: 14px 16px !important; }
+  .vv-bg-disc { display: none; }
 }
 .vv-btn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 `;
 
+// ─────────────────────────────────────────────────────────
+// Styles
+// ─────────────────────────────────────────────────────────
 const S = {
   root: {
-    "--cream": "#f6e8c8",
-    "--cream-deep": "#efd9a8",
-    "--amber": "#d9a441",
-    "--butter": "#e7c067",
-    "--red": "#c0392b",
-    "--red-deep": "#8e2b20",
-    "--ink": "#3a241a",
-    "--ink-soft": "#7a5a44",
+    "--night":          "#0e0c09",
+    "--night-2":        "#1a1710",
+    "--night-3":        "#221e14",
+    "--night-4":        "#2e2818",
+    "--gold":           "#d4941e",
+    "--gold-bright":    "#f0b830",
+    "--gold-dim":       "#5a4010",
+    "--ember":          "#c0392b",
+    "--ember-deep":     "#8a2818",
+    "--parchment":      "#e8dcc4",
+    "--parchment-muted":"#7a6a50",
+    "--parchment-dim":  "#3a3020",
     minHeight: "100vh",
-    background:
-      "radial-gradient(130% 70% at 50% -5%, #f9efd6 0%, #f1dcae 45%, #e7c98f 100%)",
-    color: "var(--ink)",
-    fontFamily: "'Fraunces', serif",
+    background: "var(--night)",
+    color: "var(--parchment)",
+    fontFamily: "'Syne', sans-serif",
     padding: "clamp(16px, 4vw, 44px)",
     position: "relative",
-    overflow: "hidden",
   },
+
+  // ── Header ──
   cabinet: {
     position: "relative",
-    maxWidth: 860,
+    maxWidth: 920,
     margin: "0 auto",
-    background: "linear-gradient(170deg, #fbf2da 0%, #f3deb0 100%)",
-    border: "3px solid var(--red-deep)",
-    borderRadius: "180px 180px 26px 26px",
-    padding: "clamp(30px,5vw,52px) clamp(24px,5vw,56px) 38px",
-    boxShadow: "inset 0 3px 0 rgba(255,255,255,0.7), 0 18px 50px rgba(110,42,26,0.28)",
+    padding: "clamp(44px,7vw,80px) clamp(24px,5vw,60px) clamp(44px,6vw,70px)",
+    borderBottom: "1px solid var(--night-4)",
     overflow: "hidden",
   },
-  archGlow: {
+  bgDisc: {
     position: "absolute",
-    top: -60,
-    left: "50%",
-    transform: "translateX(-50%)",
-    width: "120%",
-    height: 200,
-    background: "radial-gradient(50% 100% at 50% 100%, rgba(231,192,103,0.6), transparent 70%)",
+    right: -110,
+    top: "50%",
+    transform: "translateY(-50%)",
+    width: 420,
+    height: 420,
+    borderRadius: "50%",
+    background: "repeating-radial-gradient(circle, #0c0a07 0 3px, #1a1810 3px 7px, #0c0a07 7px 10px)",
+    border: "1px solid #2a2418",
+    boxShadow: "inset 0 0 60px rgba(0,0,0,0.5)",
+    opacity: 0.65,
     pointerEvents: "none",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  bubblerLeft: {
+  bgDiscLabel: {
+    width: 110,
+    height: 110,
+    borderRadius: "50%",
+    background: "radial-gradient(circle, #1e1a10 0%, #141008 100%)",
+    border: "1px solid #3a2e18",
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    boxShadow: "0 0 30px rgba(212,148,30,0.08)",
+  },
+  bgDiscHole: {
     position: "absolute",
-    left: 14,
-    top: 70,
-    bottom: 24,
-    width: 12,
-    borderRadius: 12,
-    background: "linear-gradient(180deg, #e7c067, #c0392b)",
-    boxShadow: "0 0 14px rgba(217,164,65,0.8)",
+    width: 18,
+    height: 18,
+    borderRadius: "50%",
+    background: "var(--night)",
+    border: "1px solid #3a2e18",
   },
-  bubblerRight: {
-    position: "absolute",
-    right: 14,
-    top: 70,
-    bottom: 24,
-    width: 12,
-    borderRadius: 12,
-    background: "linear-gradient(180deg, #e7c067, #c0392b)",
-    boxShadow: "0 0 14px rgba(217,164,65,0.8)",
-    animationDelay: "1.2s",
-  },
-  header: { position: "relative", textAlign: "center", zIndex: 1 },
+
+  header: { position: "relative", zIndex: 2, maxWidth: 560 },
   coinSlot: {
-    fontFamily: "'DM Mono', monospace",
-    fontSize: 11.5,
-    letterSpacing: "0.22em",
-    color: "var(--red-deep)",
-    marginBottom: 14,
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 10,
+    letterSpacing: "0.32em",
+    color: "var(--gold)",
+    marginBottom: 22,
+    opacity: 0.65,
   },
   title: {
-    fontFamily: "'Monoton', sans-serif",
-    fontSize: "clamp(40px, 8.5vw, 84px)",
-    lineHeight: 1,
-    margin: 0,
-    color: "var(--red)",
-    textShadow: "0 1px 0 #fff5dc, 0 3px 0 rgba(142,43,32,0.4), 0 6px 18px rgba(192,57,43,0.35)",
-    letterSpacing: "0.02em",
+    fontFamily: "'Cormorant Garamond', serif",
+    fontStyle: "italic",
+    fontSize: "clamp(56px, 10vw, 116px)",
+    fontWeight: 700,
+    lineHeight: 0.88,
+    margin: "0 0 28px",
+    color: "var(--parchment)",
+    letterSpacing: "-0.025em",
   },
   subtitle: {
-    marginTop: 18,
-    fontSize: "clamp(15px, 1.8vw, 18px)",
-    color: "var(--ink)",
-    maxWidth: 520,
-    margin: "18px auto 0",
-    lineHeight: 1.55,
-    fontWeight: 500,
+    fontSize: "clamp(15px, 1.7vw, 18px)",
+    fontFamily: "'Cormorant Garamond', serif",
+    fontStyle: "italic",
+    fontWeight: 400,
+    color: "var(--parchment-muted)",
+    maxWidth: 440,
+    lineHeight: 1.65,
+    margin: 0,
   },
-  controls: { maxWidth: 860, margin: "32px auto 0", position: "relative", zIndex: 1 },
+
+  // ── Controls ──
+  controls: {
+    maxWidth: 920,
+    margin: "36px auto 0",
+    position: "relative",
+    zIndex: 1,
+  },
+  sectionRule: {
+    display: "flex",
+    alignItems: "center",
+    gap: 16,
+    marginBottom: 24,
+  },
+  sectionRuleLabel: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 9.5,
+    letterSpacing: "0.35em",
+    color: "var(--parchment-dim)",
+    whiteSpace: "nowrap",
+  },
   searchRow: { display: "flex", gap: 10, flexWrap: "wrap" },
   buttonRow: { display: "flex", gap: 10, marginTop: 10 },
   input: {
     flex: "1 1 280px",
     padding: "16px 20px",
-    fontSize: 17,
-    fontFamily: "'Fraunces', serif",
+    fontSize: 16,
+    fontFamily: "'Syne', sans-serif",
     fontWeight: 500,
-    background: "#fffaf0",
-    border: "2px solid var(--amber)",
-    borderRadius: 12,
-    color: "var(--ink)",
+    background: "var(--night-2)",
+    border: "1px solid var(--night-4)",
+    borderRadius: 10,
+    color: "var(--parchment)",
     outline: "none",
-    boxShadow: "inset 0 2px 5px rgba(110,42,26,0.1)",
+    transition: "border-color 0.2s, box-shadow 0.2s",
   },
   digBtn: {
     flex: 1,
     padding: "16px 30px",
+    fontSize: 14,
+    fontWeight: 700,
+    fontFamily: "'Syne', sans-serif",
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    background: "var(--gold)",
+    color: "var(--night)",
+    border: "none",
+    borderRadius: 10,
+    cursor: "pointer",
+    transition: "background 0.15s",
+  },
+  surpriseBtn: {
+    flex: 1,
+    padding: "16px 22px",
+    fontSize: 14,
+    fontWeight: 600,
+    fontFamily: "'Syne', sans-serif",
+    letterSpacing: "0.04em",
+    background: "transparent",
+    color: "var(--gold)",
+    border: "1px solid var(--gold-dim)",
+    borderRadius: 10,
+    cursor: "pointer",
+    transition: "border-color 0.15s, background 0.15s",
+  },
+
+  dialWrap: {
+    marginTop: 20,
+    background: "var(--night-2)",
+    border: "1px solid var(--night-4)",
+    borderRadius: 12,
+    padding: "20px 24px 18px",
+  },
+  dialHead: {
+    display: "flex",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    marginBottom: 20,
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  dialLabel: {
+    fontFamily: "'Syne', sans-serif",
     fontSize: 17,
     fontWeight: 700,
-    fontFamily: "'Fraunces', serif",
-    background: "linear-gradient(180deg, #d44637, #a8291c)",
-    color: "#fff4df",
-    border: "2px solid #7a2016",
-    borderRadius: 12,
-    cursor: "pointer",
-    whiteSpace: "nowrap",
-    boxShadow: "0 4px 0 #7a2016, 0 6px 14px rgba(142,43,32,0.4)",
+    color: "var(--gold)",
+    letterSpacing: "-0.01em",
   },
-  dialWrap: {
-    marginTop: 24,
-    background: "#fffaf0",
-    border: "2px solid var(--amber)",
-    borderRadius: 16,
-    padding: "18px 24px 16px",
-    boxShadow: "inset 0 2px 6px rgba(110,42,26,0.08)",
+  dialBlurb: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 11,
+    color: "var(--parchment-muted)",
   },
-  dialHead: { display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 18, flexWrap: "wrap", gap: 6 },
-  dialLabel: { fontSize: 21, fontWeight: 700, color: "var(--red-deep)", letterSpacing: "-0.01em" },
-  dialBlurb: { fontFamily: "'DM Mono', monospace", fontSize: 12.5, color: "var(--ink-soft)" },
-  dialTicks: { display: "flex", justifyContent: "space-between", marginTop: 14, fontSize: 12 },
-  tick: { fontFamily: "'DM Mono', monospace" },
+  dialTicks: {
+    display: "flex",
+    justifyContent: "space-between",
+    marginTop: 16,
+  },
+  tick: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 11,
+  },
+
   fillWrap: {
-    marginTop: 20,
-    background: "#fffaf0",
-    border: "2px solid var(--amber)",
-    borderRadius: 16,
+    marginTop: 14,
+    background: "var(--night-2)",
+    border: "1px solid var(--night-4)",
+    borderRadius: 12,
     padding: "16px 22px",
     display: "flex",
     alignItems: "center",
     gap: 16,
     flexWrap: "wrap",
-    boxShadow: "inset 0 2px 6px rgba(110,42,26,0.08)",
   },
-  fillLabel: { fontSize: 17, fontWeight: 700, color: "var(--red-deep)", fontFamily: "'Fraunces', serif" },
-  fillChips: { display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" },
+  fillLabel: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 10,
+    letterSpacing: "0.2em",
+    textTransform: "uppercase",
+    color: "var(--parchment-muted)",
+    whiteSpace: "nowrap",
+  },
+  fillChips: { display: "flex", gap: 7, flexWrap: "wrap", alignItems: "center" },
   fillChip: {
-    padding: "8px 14px",
-    fontSize: 14,
+    padding: "6px 14px",
+    fontSize: 12,
     fontWeight: 600,
-    fontFamily: "'DM Mono', monospace",
+    fontFamily: "'IBM Plex Mono', monospace",
     background: "transparent",
-    color: "var(--ink-soft)",
-    border: "2px solid var(--cream-deep)",
+    color: "var(--parchment-muted)",
+    border: "1px solid var(--night-4)",
     borderRadius: 999,
     cursor: "pointer",
+    transition: "all 0.15s",
   },
-  fillChipOn: { background: "var(--red)", color: "#fff4df", borderColor: "var(--red)" },
-  fillCustom: { display: "flex", alignItems: "center", gap: 5, marginLeft: 4 },
+  fillChipOn: {
+    background: "var(--gold)",
+    color: "var(--night)",
+    borderColor: "var(--gold)",
+  },
+  fillCustom: { display: "flex", alignItems: "center", gap: 5, marginLeft: 2 },
   fillInput: {
-    width: 62,
-    padding: "8px 10px",
-    fontSize: 14,
-    fontFamily: "'DM Mono', monospace",
-    background: "#fff",
-    border: "2px solid var(--amber)",
-    borderRadius: 10,
-    color: "var(--ink)",
+    width: 58,
+    padding: "6px 10px",
+    fontSize: 12,
+    fontFamily: "'IBM Plex Mono', monospace",
+    background: "var(--night-3)",
+    border: "1px solid var(--night-4)",
+    borderRadius: 8,
+    color: "var(--parchment)",
     outline: "none",
   },
-  fillUnit: { fontFamily: "'DM Mono', monospace", fontSize: 13, color: "var(--ink-soft)" },
-  fillMeter: { marginTop: 14 },
-  fillMeterTop: {
-    display: "flex",
-    justifyContent: "space-between",
-    fontFamily: "'DM Mono', monospace",
-    fontSize: 12,
-    color: "var(--ink-soft)",
-    marginBottom: 7,
+  fillUnit: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 11,
+    color: "var(--parchment-muted)",
   },
-  fillTrack: { height: 9, background: "var(--cream-deep)", borderRadius: 9, overflow: "hidden" },
-  fillBar: { height: "100%", borderRadius: 9, transition: "width 0.4s cubic-bezier(0.2,0.8,0.2,1)" },
+
   error: {
-    maxWidth: 860,
-    margin: "20px auto 0",
+    maxWidth: 920,
+    margin: "16px auto 0",
     padding: "12px 18px",
     background: "rgba(192,57,43,0.1)",
-    border: "2px solid var(--red)",
-    borderRadius: 12,
-    color: "var(--red-deep)",
-    fontFamily: "'DM Mono', monospace",
+    border: "1px solid rgba(192,57,43,0.4)",
+    borderRadius: 10,
+    color: "#e06858",
+    fontFamily: "'IBM Plex Mono', monospace",
     fontSize: 13,
     textAlign: "center",
   },
+
+  // ── Body ──
   body: {
-    maxWidth: 860,
-    margin: "34px auto 0",
+    maxWidth: 920,
+    margin: "28px auto 0",
     display: "grid",
-    gridTemplateColumns: "minmax(0,1fr) 300px",
-    gap: 26,
-    position: "relative",
-    zIndex: 1,
+    gridTemplateColumns: "minmax(0,1fr) 270px",
+    gap: 22,
     alignItems: "start",
   },
-  resultsCol: { display: "flex", flexDirection: "column", gap: 11, minHeight: 200 },
-  empty: { textAlign: "center", padding: "56px 20px", color: "var(--ink-soft)", fontFamily: "'DM Mono', monospace", fontSize: 14 },
+  resultsCol: { display: "flex", flexDirection: "column", gap: 7, minHeight: 200 },
+
+  empty: {
+    textAlign: "center",
+    padding: "64px 20px",
+    color: "var(--parchment-muted)",
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 12,
+    lineHeight: 1.7,
+  },
   emptyDisc: {
-    width: 92,
-    height: 92,
+    width: 86,
+    height: 86,
     borderRadius: "50%",
     margin: "0 auto",
-    background: "repeating-radial-gradient(circle, #3a241a 0 3px, #6e4a32 3px 6px)",
-    border: "4px solid #d9a441",
-    boxShadow: "0 0 0 2px #8e2b20",
+    background: "repeating-radial-gradient(circle, #0c0a07 0 3px, #1a1810 3px 6px)",
+    border: "2px solid var(--gold-dim)",
+    boxShadow: "0 0 30px rgba(212,148,30,0.06)",
   },
+
+  // ── Track rows ──
   row: {
     display: "flex",
     alignItems: "center",
     gap: 14,
-    padding: "14px 16px",
-    background: "linear-gradient(180deg, #fffaf0, #fbedcf)",
-    border: "2px solid var(--cream-deep)",
-    borderRadius: 14,
-    transition: "transform 0.18s, box-shadow 0.18s",
+    padding: "13px 16px 13px 14px",
+    background: "var(--night-2)",
+    border: "1px solid var(--night-4)",
+    borderLeft: "3px solid var(--gold-dim)", // overridden inline per-track
+    borderRadius: 10,
+    transition: "transform 0.15s, border-color 0.15s",
     cursor: "pointer",
+    position: "relative",
   },
   rowPlaying: {
-    borderColor: "var(--red)",
-    background: "linear-gradient(180deg, #fff6e0, #ffe9c4)",
-    boxShadow: "0 6px 18px rgba(192,57,43,0.22)",
+    background: "var(--night-3)",
+    borderColor: "var(--gold) !important",
+    boxShadow: "0 0 0 1px rgba(212,148,30,0.15), 0 4px 20px rgba(0,0,0,0.35)",
   },
-  discWrap: { position: "relative", width: 38, height: 38, flexShrink: 0, cursor: "pointer" },
+  discWrap: { position: "relative", width: 34, height: 34, flexShrink: 0 },
   disc: {
-    width: 38,
-    height: 38,
+    width: 34,
+    height: 34,
     borderRadius: "50%",
-    background: "repeating-radial-gradient(circle, #2a1810 0 2px, #4a2f1e 2px 4px)",
-    boxShadow: "0 0 0 1px var(--red-deep)",
+    background: "repeating-radial-gradient(circle, #080604 0 2px, #181410 2px 4px)",
+    boxShadow: "0 0 0 1px var(--night-4)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
   },
-  discHole: { width: 11, height: 11, borderRadius: "50%", background: "var(--red)", boxShadow: "inset 0 0 0 2px #fff4df" },
+  discHole: {
+    width: 9,
+    height: 9,
+    borderRadius: "50%",
+    background: "var(--gold)",
+    boxShadow: "0 0 6px rgba(212,148,30,0.4)",
+  },
   eqBadge: {
     position: "absolute",
-    top: -6,
-    right: -6,
-    background: "var(--red)",
-    color: "#fff4df",
-    fontSize: 11,
-    width: 18,
-    height: 18,
+    top: -5,
+    right: -5,
+    background: "var(--gold)",
+    color: "var(--night)",
+    fontSize: 9,
+    width: 16,
+    height: 16,
     borderRadius: "50%",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    boxShadow: "0 0 8px rgba(217,164,65,0.9)",
-  },
-  surpriseBtn: {
-    flex: 1,
-    padding: "16px 22px",
-    fontSize: 16,
     fontWeight: 700,
-    fontFamily: "'Fraunces', serif",
-    background: "#fffaf0",
-    color: "var(--red-deep)",
-    border: "2px solid var(--amber)",
-    borderRadius: 12,
-    cursor: "pointer",
-    whiteSpace: "nowrap",
-    boxShadow: "0 4px 0 var(--amber)",
   },
   rowMain: { flex: 1, minWidth: 0 },
-  rowTitle: { fontSize: 19, fontWeight: 700, letterSpacing: "-0.01em", color: "var(--ink)" },
-  rowMeta: { fontFamily: "'DM Mono', monospace", fontSize: 12.5, color: "var(--red-deep)", marginTop: 2 },
-  rowNote: { fontSize: 14, color: "var(--ink-soft)", marginTop: 6, fontStyle: "italic" },
+  rowTitle: {
+    fontFamily: "'Syne', sans-serif",
+    fontSize: 15,
+    fontWeight: 700,
+    letterSpacing: "-0.01em",
+    color: "var(--parchment)",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
+  rowMeta: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 11,
+    color: "var(--parchment-muted)",
+    marginTop: 3,
+  },
+  rowNote: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 11,
+    color: "var(--gold)",
+    marginTop: 5,
+    opacity: 0.75,
+  },
+  rowActions: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 6,
+    flexShrink: 0,
+  },
   addBtn: {
-    width: 42,
-    height: 42,
+    width: 36,
+    height: 36,
     borderRadius: "50%",
-    border: "2px solid var(--red)",
-    background: "#fffaf0",
-    color: "var(--red)",
-    fontSize: 22,
+    border: "1px solid var(--gold-dim)",
+    background: "transparent",
+    color: "var(--gold)",
+    fontSize: 19,
     fontWeight: 700,
     cursor: "pointer",
     flexShrink: 0,
     lineHeight: 1,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "all 0.15s",
   },
-  addBtnDone: { background: "var(--red)", color: "#fff4df", cursor: "default" },
-  rowActions: { display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flexShrink: 0 },
+  addBtnDone: {
+    background: "var(--gold)",
+    color: "var(--night)",
+    borderColor: "var(--gold)",
+    cursor: "default",
+    fontSize: 15,
+  },
   branchBtn: {
-    fontFamily: "'DM Mono', monospace",
-    fontSize: 10,
-    letterSpacing: "0.02em",
-    color: "var(--red-deep)",
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 9,
+    letterSpacing: "0.04em",
+    color: "var(--parchment-muted)",
     background: "transparent",
-    border: "1px solid var(--cream-deep)",
+    border: "1px solid var(--night-4)",
     borderRadius: 999,
     padding: "3px 9px",
     cursor: "pointer",
     whiteSpace: "nowrap",
+    transition: "all 0.15s",
   },
   addAllBtn: {
-    marginTop: 6,
-    padding: "15px",
-    fontSize: 16,
+    marginTop: 4,
+    padding: "14px",
+    fontSize: 12,
     fontWeight: 700,
-    fontFamily: "'Fraunces', serif",
-    background: "linear-gradient(180deg, #e7c067, #cfa23f)",
-    color: "var(--ink)",
-    border: "2px solid #a8842f",
-    borderRadius: 14,
+    fontFamily: "'Syne', sans-serif",
+    letterSpacing: "0.07em",
+    textTransform: "uppercase",
+    background: "transparent",
+    color: "var(--gold)",
+    border: "1px solid var(--gold-dim)",
+    borderRadius: 10,
     cursor: "pointer",
-    boxShadow: "0 4px 0 #a8842f, 0 6px 14px rgba(168,132,47,0.35)",
+    transition: "all 0.15s",
   },
   addAllDone: {
-    background: "#efe0bd",
-    color: "var(--ink-soft)",
-    boxShadow: "none",
+    color: "var(--parchment-muted)",
+    borderColor: "var(--night-4)",
     cursor: "default",
   },
-  meter: { display: "flex", flexDirection: "column", alignItems: "center", gap: 5, width: 42, flexShrink: 0 },
-  meterBars: { display: "flex", alignItems: "flex-end", gap: 2, height: 22 },
+
+  // ── ObscurityMeter ──
+  meter: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 4,
+    width: 38,
+    flexShrink: 0,
+  },
+  meterBars: { display: "flex", alignItems: "flex-end", gap: 2, height: 20 },
   meterBar: { width: 4, borderRadius: 2 },
-  meterLabel: { fontFamily: "'DM Mono', monospace", fontSize: 9.5, letterSpacing: "0.05em", color: "var(--ink-soft)", textTransform: "uppercase" },
+  meterLabel: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 8,
+    letterSpacing: "0.1em",
+    textTransform: "uppercase",
+  },
+
+  // ── Stack ──
   stackCol: {
-    background: "linear-gradient(180deg, #fffaf0, #f6e6c4)",
-    border: "2px solid var(--amber)",
-    borderRadius: 18,
-    padding: 20,
+    background: "var(--night-2)",
+    border: "1px solid var(--night-4)",
+    borderRadius: 12,
+    padding: 18,
     position: "sticky",
     top: 20,
-    boxShadow: "0 8px 24px rgba(110,42,26,0.12)",
   },
   stackHead: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    fontFamily: "'DM Mono', monospace",
-    fontSize: 12,
-    letterSpacing: "0.2em",
-    color: "var(--red-deep)",
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 9.5,
+    letterSpacing: "0.28em",
+    color: "var(--parchment-muted)",
     paddingBottom: 14,
-    borderBottom: "2px solid var(--cream-deep)",
+    borderBottom: "1px solid var(--night-4)",
+    textTransform: "uppercase",
   },
-  stackCount: { background: "var(--red)", color: "#fff4df", borderRadius: 20, padding: "1px 11px", fontWeight: 700 },
-  stackEmpty: { fontFamily: "'DM Mono', monospace", fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.5, marginTop: 16 },
-  stackList: { display: "flex", flexDirection: "column", gap: 4, marginTop: 14, maxHeight: 440, overflowY: "auto" },
-  stackItem: { display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: "1px dashed var(--cream-deep)" },
-  stackNum: { fontFamily: "'DM Mono', monospace", fontSize: 12, color: "var(--amber)", fontWeight: 700, flexShrink: 0 },
-  stackItemTitle: { fontSize: 15, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "var(--ink)" },
-  stackItemArtist: { fontFamily: "'DM Mono', monospace", fontSize: 11.5, color: "var(--red-deep)" },
-  removeBtn: { background: "none", border: "none", color: "var(--ink-soft)", fontSize: 20, cursor: "pointer", flexShrink: 0, lineHeight: 1 },
+  stackCount: {
+    background: "var(--gold)",
+    color: "var(--night)",
+    borderRadius: 999,
+    padding: "1px 9px",
+    fontWeight: 700,
+    fontSize: 10,
+    letterSpacing: "0.05em",
+  },
+  fillMeter: { marginTop: 14 },
+  fillMeterTop: {
+    display: "flex",
+    justifyContent: "space-between",
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 10.5,
+    color: "var(--parchment-muted)",
+    marginBottom: 6,
+  },
+  fillTrack: { height: 2, background: "var(--night-4)", borderRadius: 2, overflow: "hidden" },
+  fillBar: { height: "100%", borderRadius: 2, transition: "width 0.4s cubic-bezier(0.2,0.8,0.2,1)" },
+  stackEmpty: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 11.5,
+    color: "var(--parchment-muted)",
+    lineHeight: 1.65,
+    marginTop: 16,
+  },
+  stackList: {
+    display: "flex",
+    flexDirection: "column",
+    marginTop: 14,
+    maxHeight: 420,
+    overflowY: "auto",
+  },
+  stackItem: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    padding: "9px 0",
+    borderBottom: "1px solid var(--night-4)",
+  },
+  stackNum: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 10,
+    color: "var(--gold)",
+    fontWeight: 700,
+    flexShrink: 0,
+    opacity: 0.6,
+    width: 20,
+  },
+  stackItemTitle: {
+    fontFamily: "'Syne', sans-serif",
+    fontSize: 13,
+    fontWeight: 700,
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    color: "var(--parchment)",
+  },
+  stackItemArtist: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 10,
+    color: "var(--parchment-muted)",
+    marginTop: 1,
+  },
+  removeBtn: {
+    background: "none",
+    border: "none",
+    color: "var(--parchment-muted)",
+    fontSize: 17,
+    cursor: "pointer",
+    flexShrink: 0,
+    lineHeight: 1,
+    opacity: 0.45,
+    transition: "opacity 0.15s",
+    padding: "0 2px",
+  },
   copyBtn: {
     marginTop: 16,
     width: "100%",
-    padding: "13px",
-    background: "linear-gradient(180deg, #d44637, #a8291c)",
-    border: "2px solid #7a2016",
-    color: "#fff4df",
-    borderRadius: 12,
-    fontSize: 15,
+    padding: "12px",
+    background: "var(--gold)",
+    border: "none",
+    color: "var(--night)",
+    borderRadius: 8,
+    fontSize: 11,
     fontWeight: 700,
     cursor: "pointer",
-    fontFamily: "'Fraunces', serif",
-    boxShadow: "0 3px 0 #7a2016",
+    fontFamily: "'Syne', sans-serif",
+    letterSpacing: "0.1em",
+    textTransform: "uppercase",
+    transition: "background 0.15s",
   },
 };

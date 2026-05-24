@@ -5,7 +5,8 @@
       "WebFetch(domain:www.last.fm)",
       "PowerShell(gh auth *)",
       "PowerShell(npm run *)",
-      "PowerShell(Copy-Item *)"
+      "PowerShell(Copy-Item *)",
+      "PowerShell(gh api *)"
     ]
   }
 }
