@@ -38,6 +38,15 @@ function formatTrack(raw) {
 
 const MAX_PER_ARTIST = 2;
 
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 function dedupeAndCap(tracks) {
   const seen = {};
   const seenTracks = new Set();
@@ -53,20 +62,22 @@ function dedupeAndCap(tracks) {
 }
 
 // tag.getTopTracks returns neither listener counts nor duration.
-// Obscurity is derived from rank position (rank 0 = most popular = obscurity 0; last = obscurity 100).
-// Duration falls back to the 210s estimate in formatTrack.
+// We overfetch a large pool, shuffle it, then assign obscurity by shuffled position
+// so each call returns a different random slice of the genre's catalogue.
 export async function searchByTag(tag, limit = 20) {
-  const data = await lfm({ method: 'tag.getTopTracks', tag, limit });
+  const poolSize = Math.min(200, limit * 6);
+  const data = await lfm({ method: 'tag.getTopTracks', tag, limit: poolSize });
   const raw = data?.tracks?.track || [];
-  const total = raw.length || 1;
-  const tracks = raw.map((t, i) => ({
+  const shuffled = shuffle(raw);
+  const total = shuffled.length || 1;
+  const tracks = shuffled.map((t, i) => ({
     name: t.name,
     artist: t.artist?.name || '',
     duration: 0,
     listeners: 0,
     obscurity: Math.round((i / (total - 1 || 1)) * 100),
   }));
-  return dedupeAndCap(tracks.map(formatTrack));
+  return dedupeAndCap(tracks.map(formatTrack)).slice(0, limit);
 }
 
 export async function searchByArtist(artist, limit = 20, includeSeed = true) {
@@ -86,10 +97,9 @@ export async function searchByArtist(artist, limit = 20, includeSeed = true) {
     )
   );
 
-  const flat = results.flat();
+  const flat = shuffle(results.flat());
   const withObscurity = normalizeObscurity(flat);
-  const sorted = withObscurity.sort((a, b) => a.obscurity - b.obscurity);
-  return dedupeAndCap(sorted.map(formatTrack)).slice(0, limit);
+  return dedupeAndCap(withObscurity.map(formatTrack)).slice(0, limit);
 }
 
 export async function branchFromTrack(track, limit = 20) {
@@ -107,7 +117,7 @@ export async function branchFromTrack(track, limit = 20) {
     )
   );
 
-  const flat = results.flat().filter(
+  const flat = shuffle(results.flat()).filter(
     (t) => t.name?.toLowerCase() !== track.title?.toLowerCase()
   );
 
