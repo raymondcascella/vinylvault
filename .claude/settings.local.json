@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "PowerShell(New-Item *)",
-      "WebFetch(domain:www.last.fm)"
+      "WebFetch(domain:www.last.fm)",
+      "PowerShell(gh auth *)",
+      "PowerShell(npm run *)",
+      "PowerShell(Copy-Item *)"
     ]
   }
 }
