@@ -62,22 +62,22 @@ function dedupeAndCap(tracks) {
 }
 
 // tag.getTopTracks returns neither listener counts nor duration.
-// We overfetch a large pool, shuffle it, then assign obscurity by shuffled position
-// so each call returns a different random slice of the genre's catalogue.
+// Obscurity is derived from rank position (rank 0 = most popular = obscurity 0; last = obscurity 100).
+// A random page (1–5) is requested each call so the same tag yields different tracks.
+// Duration falls back to the 210s estimate in formatTrack.
 export async function searchByTag(tag, limit = 20) {
-  const poolSize = Math.min(200, limit * 6);
-  const data = await lfm({ method: 'tag.getTopTracks', tag, limit: poolSize });
+  const page = Math.ceil(Math.random() * 5);
+  const data = await lfm({ method: 'tag.getTopTracks', tag, limit, page });
   const raw = data?.tracks?.track || [];
-  const shuffled = shuffle(raw);
-  const total = shuffled.length || 1;
-  const tracks = shuffled.map((t, i) => ({
+  const total = raw.length || 1;
+  const tracks = raw.map((t, i) => ({
     name: t.name,
     artist: t.artist?.name || '',
     duration: 0,
     listeners: 0,
     obscurity: Math.round((i / (total - 1 || 1)) * 100),
   }));
-  return dedupeAndCap(tracks.map(formatTrack)).slice(0, limit);
+  return dedupeAndCap(tracks.map(formatTrack));
 }
 
 export async function searchByArtist(artist, limit = 20, includeSeed = true) {
