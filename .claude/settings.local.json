@@ -6,7 +6,11 @@
       "PowerShell(gh auth *)",
       "PowerShell(npm run *)",
       "PowerShell(Copy-Item *)",
-      "PowerShell(gh api *)"
+      "PowerShell(gh api *)",
+      "Bash(npm run *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }
